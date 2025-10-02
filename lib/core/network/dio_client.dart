@@ -15,7 +15,7 @@ class DioClient {
       lineLength: 80,
       colors: true,
       printEmojis: true,
-      printTime: false,
+      dateTimeFormat: DateTimeFormat.none,
     ),
   );
 
