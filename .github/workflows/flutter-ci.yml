@@ -6,8 +6,10 @@ on:
   pull_request:
     branches: [main, develop]
 
-env:
-  FLUTTER_VERSION: "3.35.2"
+# --- CAMBIO #1 ---
+# Eliminamos la variable 'env' porque ahora especificaremos el canal directamente.
+# env:
+#   FLUTTER_VERSION: "stable"
 
 jobs:
   test:
@@ -21,10 +23,12 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: ${{ env.FLUTTER_VERSION }}
+          # --- CAMBIO #2 ---
+          # Usamos 'channel' en lugar de 'flutter-version' para mayor claridad.
+          channel: 'stable'
           cache: true
-          cache-key: flutter-${{ env.FLUTTER_VERSION }}
-          cache-path: ${{ runner.tool_cache }}/flutter
+          # La configuración de caché puede ser simplificada ya que el 'channel' es la clave.
+          cache-key: flutter-stable
 
       - name: Show Flutter and Dart versions
         run: |
@@ -35,9 +39,10 @@ jobs:
         run: flutter pub get
 
       - name: Analyze code
-        run: flutter analyze
+        run: flutter analyze --fatal-infos
 
       - name: Run tests
+        if: ${{ hashFiles('test/**_test.dart') != '' }}
         run: flutter test
 
   build-android:
@@ -52,7 +57,9 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: ${{ env.FLUTTER_VERSION }}
+          # --- CAMBIO #3 ---
+          # Aplicamos el mismo cambio aquí para consistencia.
+          channel: 'stable'
           cache: true
 
       - name: Get dependencies

@@ -1,17 +1,31 @@
 import 'package:dio/dio.dart';
+import 'package:logger/logger.dart';
+import 'package:injectable/injectable.dart';
+
 import 'package:cowork_frontend/core/constants/app_constants.dart';
 import 'package:cowork_frontend/core/errors/failures.dart';
 
+@lazySingleton // Esto le dice a `get_it` que cree una sola instancia de esta clase
 class DioClient {
   late final Dio _dio;
+  final Logger _logger = Logger(
+    printer: PrettyPrinter(
+      methodCount: 0,
+      errorMethodCount: 5,
+      lineLength: 80,
+      colors: true,
+      printEmojis: true,
+      dateTimeFormat: DateTimeFormat.none,
+    ),
+  );
 
   DioClient() {
     _dio = Dio()
       ..options.baseUrl = AppConstants.baseUrl
-      ..options.connectTimeout = Duration(
+      ..options.connectTimeout = const Duration(
         milliseconds: AppConstants.connectTimeout,
       )
-      ..options.receiveTimeout = Duration(
+      ..options.receiveTimeout = const Duration(
         milliseconds: AppConstants.receiveTimeout,
       )
       ..options.headers = {
@@ -26,13 +40,12 @@ class DioClient {
     _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) {
-          // Log de requests
-          print('🌐 REQUEST: ${options.method} ${options.uri}');
+          _logger.d('🌐 REQUEST: ${options.method} ${options.uri}');
           if (options.data != null) {
-            print('📦 BODY: ${options.data}');
+            _logger.d('📦 BODY: ${options.data}');
           }
 
-          // Agregar token de autenticación si existe
+          // Aquí puedes agregar lógica para el token de autenticación
           // final token = await _getToken();
           // if (token != null) {
           //   options.headers['Authorization'] = 'Bearer $token';
@@ -41,15 +54,19 @@ class DioClient {
           return handler.next(options);
         },
         onResponse: (response, handler) {
-          print(
+          _logger.i(
             '✅ RESPONSE: ${response.statusCode} ${response.requestOptions.uri}',
           );
           return handler.next(response);
         },
         onError: (DioException error, handler) {
-          print('❌ ERROR: ${error.type} - ${error.message}');
+          _logger.e(
+            '❌ ERROR: ${error.type} - ${error.message}',
+            error: error.error,
+            stackTrace: error.stackTrace,
+          );
 
-          // Convertir errores de Dio a nuestros Failures
+          // Convertir errores de Dio a nuestros Failures personalizados
           if (error.type == DioExceptionType.connectionTimeout ||
               error.type == DioExceptionType.receiveTimeout ||
               error.type == DioExceptionType.sendTimeout) {
@@ -66,7 +83,7 @@ class DioClient {
             return handler.reject(
               DioException(
                 requestOptions: error.requestOptions,
-                error: const NetworkFailure('Error de conexión'),
+                error: const NetworkFailure('Error de conexión a internet'),
                 type: error.type,
               ),
             );
@@ -130,9 +147,13 @@ class DioClient {
 
   String _getErrorMessage(dynamic data) {
     if (data is Map<String, dynamic>) {
-      return data['detail'] ?? data['message'] ?? 'Error desconocido';
+      // Busca en llaves comunes como 'detail', 'message' o 'error'
+      return data['detail'] ??
+          data['message'] ??
+          data['error'] ??
+          'Ocurrió un error';
     }
-    return 'Error desconocido';
+    return 'Ocurrió un error inesperado';
   }
 
   Dio get dio => _dio;
