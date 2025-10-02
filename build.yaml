@@ -1,0 +1,25 @@
+targets:
+  $default:
+    builders:
+      json_serializable:
+        options:
+          # Creates `toJson()` methods.
+          any_map: false
+          # Creates `fromJson()` factory constructors.
+          checked: false
+          # Creates classes that can be used to create instances from a Map.
+          create_factory: true
+          # Creates classes that can be used to create a Map from an instance.
+          create_to_json: true
+          # Creates classes that can be used to replace existing class instances.
+          disallow_unrecognized_keys: false
+          # Creates classes with the ability to ignore null values.
+          explicit_to_json: false
+          # Creates classes that can be used to replace existing class instances.
+          field_rename: none
+          # Creates classes with default value for keys.
+          generic_argument_factories: false
+          # Creates classes that can be used to check if two instances are equal.
+          ignore_unannotated: false
+          # Creates classes that include the type of the class in the JSON output.
+          include_if_null: true
