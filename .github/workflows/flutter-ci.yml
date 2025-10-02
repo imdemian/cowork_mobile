@@ -6,10 +6,10 @@ on:
   pull_request:
     branches: [main, develop]
 
-env:
-  # Te recomiendo usar 'stable' para no tener que actualizar esto manualmente.
-  # Pero si prefieres una versión específica, déjalo como está.
-  FLUTTER_VERSION: "stable" 
+# --- CAMBIO #1 ---
+# Eliminamos la variable 'env' porque ahora especificaremos el canal directamente.
+# env:
+#   FLUTTER_VERSION: "stable"
 
 jobs:
   test:
@@ -23,10 +23,12 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: ${{ env.FLUTTER_VERSION }}
+          # --- CAMBIO #2 ---
+          # Usamos 'channel' en lugar de 'flutter-version' para mayor claridad.
+          channel: 'stable'
           cache: true
-          cache-key: flutter-${{ env.FLUTTER_VERSION }}
-          cache-path: ${{ runner.tool_cache }}/flutter
+          # La configuración de caché puede ser simplificada ya que el 'channel' es la clave.
+          cache-key: flutter-stable
 
       - name: Show Flutter and Dart versions
         run: |
@@ -37,22 +39,16 @@ jobs:
         run: flutter pub get
 
       - name: Analyze code
-        # --- CAMBIO #1 ---
-        # Añadimos --fatal-infos para que las advertencias también fallen el build,
-        # manteniendo el código más limpio.
         run: flutter analyze --fatal-infos
 
       - name: Run tests
-        # --- CAMBIO #2 ---
-        # Añadimos la condición 'if'. Este paso solo se ejecutará si existen
-        # archivos de prueba, evitando el error si la carpeta 'test' está vacía o no existe.
         if: ${{ hashFiles('test/**_test.dart') != '' }}
         run: flutter test
 
   build-android:
     name: Build Android APK
     runs-on: ubuntu-latest
-    needs: test # Esto es correcto, el build solo se ejecuta si el job 'test' pasa.
+    needs: test
 
     steps:
       - name: Checkout code
@@ -61,7 +57,9 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: ${{ env.FLUTTER_VERSION }}
+          # --- CAMBIO #3 ---
+          # Aplicamos el mismo cambio aquí para consistencia.
+          channel: 'stable'
           cache: true
 
       - name: Get dependencies
