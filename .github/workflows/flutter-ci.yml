@@ -7,7 +7,9 @@ on:
     branches: [main, develop]
 
 env:
-  FLUTTER_VERSION: "3.35.2"
+  # Te recomiendo usar 'stable' para no tener que actualizar esto manualmente.
+  # Pero si prefieres una versión específica, déjalo como está.
+  FLUTTER_VERSION: "stable" 
 
 jobs:
   test:
@@ -35,15 +37,22 @@ jobs:
         run: flutter pub get
 
       - name: Analyze code
-        run: flutter analyze
+        # --- CAMBIO #1 ---
+        # Añadimos --fatal-infos para que las advertencias también fallen el build,
+        # manteniendo el código más limpio.
+        run: flutter analyze --fatal-infos
 
       - name: Run tests
+        # --- CAMBIO #2 ---
+        # Añadimos la condición 'if'. Este paso solo se ejecutará si existen
+        # archivos de prueba, evitando el error si la carpeta 'test' está vacía o no existe.
+        if: ${{ hashFiles('test/**_test.dart') != '' }}
         run: flutter test
 
   build-android:
     name: Build Android APK
     runs-on: ubuntu-latest
-    needs: test
+    needs: test # Esto es correcto, el build solo se ejecuta si el job 'test' pasa.
 
     steps:
       - name: Checkout code
