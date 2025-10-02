@@ -7,15 +7,15 @@ part 'user_model.g.dart';
 class UserModel {
   final int id;
   final String email;
-  final String? first_name;
-  final String? last_name;
+  final String? firstName;
+  final String? lastName;
   final String? token;
 
   UserModel({
     required this.id,
     required this.email,
-    this.first_name,
-    this.last_name,
+    this.firstName,
+    this.lastName,
     this.token,
   });
 
@@ -26,16 +26,16 @@ class UserModel {
   UserEntity toEntity() => UserEntity(
     id: id,
     email: email,
-    firstName: first_name,
-    lastName: last_name,
+    firstName: firstName,
+    lastName: lastName,
     token: token,
   );
 
   factory UserModel.fromEntity(UserEntity entity) => UserModel(
     id: entity.id,
     email: entity.email,
-    first_name: entity.firstName,
-    last_name: entity.lastName,
+    firstName: entity.firstName,
+    lastName: entity.lastName,
     token: entity.token,
   );
 }
