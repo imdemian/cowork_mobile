@@ -1,4 +1,8 @@
 import 'package:dio/dio.dart';
+<<<<<<< Updated upstream
+=======
+import 'package:logger/logger.dart';
+>>>>>>> Stashed changes
 import 'package:cowork_frontend/core/constants/app_constants.dart';
 import 'package:cowork_frontend/core/errors/failures.dart';
 
@@ -31,6 +35,7 @@ class DioClient {
           if (options.data != null) {
             print('📦 BODY: ${options.data}');
           }
+<<<<<<< Updated upstream
 
           // Agregar token de autenticación si existe
           // final token = await _getToken();
@@ -38,6 +43,8 @@ class DioClient {
           //   options.headers['Authorization'] = 'Bearer $token';
           // }
 
+=======
+>>>>>>> Stashed changes
           return handler.next(options);
         },
         onResponse: (response, handler) {
@@ -49,7 +56,10 @@ class DioClient {
         onError: (DioException error, handler) {
           print('❌ ERROR: ${error.type} - ${error.message}');
 
+<<<<<<< Updated upstream
           // Convertir errores de Dio a nuestros Failures
+=======
+>>>>>>> Stashed changes
           if (error.type == DioExceptionType.connectionTimeout ||
               error.type == DioExceptionType.receiveTimeout ||
               error.type == DioExceptionType.sendTimeout) {
@@ -130,7 +140,14 @@ class DioClient {
 
   String _getErrorMessage(dynamic data) {
     if (data is Map<String, dynamic>) {
+<<<<<<< Updated upstream
       return data['detail'] ?? data['message'] ?? 'Error desconocido';
+=======
+      return data['detail'] ??
+          data['message'] ??
+          data['error'] ??
+          'Ocurrió un error';
+>>>>>>> Stashed changes
     }
     return 'Error desconocido';
   }
