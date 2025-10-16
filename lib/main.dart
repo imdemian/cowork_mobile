@@ -10,6 +10,12 @@ import 'package:cowork_frontend/features/auth/presentation/pages/login_page.dart
 import 'package:cowork_frontend/core/navigation/main_navigation_page.dart';
 import 'package:cowork_frontend/features/spaces/presentation/pages/space_detail_page.dart';
 
+// Importar todas las páginas
+import 'package:cowork_frontend/features/splash/presentation/pages/splash_page.dart';
+import 'package:cowork_frontend/features/auth/presentation/pages/login_page.dart';
+import 'package:cowork_frontend/core/navigation/main_navigation_page.dart';
+import 'package:cowork_frontend/features/spaces/presentation/pages/space_detail_page.dart';
+
 void main() {
   DependencyInjection.init();
   runApp(const MyApp());
@@ -26,7 +32,10 @@ class MyApp extends StatelessWidget {
       darkTheme: AppTheme.darkTheme,
       themeMode: ThemeMode.light,
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
       home: const HomePage(),
+=======
+>>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
       debugShowCheckedModeBanner: false,

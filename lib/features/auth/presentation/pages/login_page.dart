@@ -349,6 +349,9 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ],
               ),
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
             ),
             const SizedBox(height: 24),
