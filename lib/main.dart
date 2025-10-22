@@ -31,13 +31,8 @@ class MyApp extends StatelessWidget {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: ThemeMode.light,
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
       home: const HomePage(),
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
+
       debugShowCheckedModeBanner: false,
       initialRoute: AppRoutes.splash,
       routes: {
