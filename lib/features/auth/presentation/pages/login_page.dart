@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cowork_frontend/features/auth/presentation/pages/sign_up_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -181,7 +182,12 @@ class _LoginPageState extends State<LoginPage> {
                     const Text('¿No tienes cuenta? '),
                     TextButton(
                       onPressed: () {
-                        Navigator.pushNamed(context, '/register');
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const SignUpPage(),
+                          ),
+                        );
                       },
                       child: const Text(
                         'Regístrate aquí',

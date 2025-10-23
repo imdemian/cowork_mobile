@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:cowork_frontend/features/auth/presentation/pages/privacy_policy_page.dart';
+import 'package:cowork_frontend/features/auth/presentation/pages/data_protection_page.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -130,18 +132,21 @@ class ProfilePage extends StatelessWidget {
             Icons.history,
             'Historial de Reservas',
             'Ver todas tus reservas',
+            null,
           ),
           _buildMenuItem(
             context,
             Icons.payment,
             'Métodos de Pago',
             'Gestionar tus tarjetas',
+            null,
           ),
           _buildMenuItem(
             context,
             Icons.receipt_long,
             'Facturas',
             'Descargar tus recibos',
+            null,
           ),
         ]),
         const SizedBox(height: 16),
@@ -151,14 +156,22 @@ class ProfilePage extends StatelessWidget {
             Icons.notifications_outlined,
             'Notificaciones',
             'Gestionar alertas',
+            null,
           ),
-          _buildMenuItem(context, Icons.language, 'Idioma', 'Español'),
-          _buildMenuItem(context, Icons.dark_mode_outlined, 'Tema', 'Claro'),
+          _buildMenuItem(context, Icons.language, 'Idioma', 'Español', null),
+          _buildMenuItem(
+            context,
+            Icons.dark_mode_outlined,
+            'Tema',
+            'Claro',
+            null,
+          ),
           _buildMenuItem(
             context,
             Icons.privacy_tip_outlined,
             'Privacidad',
             'Configuración de privacidad',
+            () => _showPrivacyOptions(context),
           ),
         ]),
         const SizedBox(height: 16),
@@ -168,12 +181,14 @@ class ProfilePage extends StatelessWidget {
             Icons.help_outline,
             'Ayuda y Soporte',
             'Centro de ayuda',
+            null,
           ),
           _buildMenuItem(
             context,
             Icons.info_outline,
             'Acerca de',
             'Versión 1.0.0',
+            null,
           ),
         ]),
         const SizedBox(height: 24),
@@ -230,17 +245,83 @@ class ProfilePage extends StatelessWidget {
     IconData icon,
     String title,
     String subtitle,
+    VoidCallback? customAction,
   ) {
     return ListTile(
       leading: Icon(icon),
       title: Text(title),
       subtitle: Text(subtitle, style: const TextStyle(fontSize: 12)),
       trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-      onTap: () {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Abriendo $title')));
-      },
+      onTap:
+          customAction ??
+          () {
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text('Abriendo $title')));
+          },
+    );
+  }
+
+  void _showPrivacyOptions(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 20),
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const Text(
+              'Privacidad y Datos',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 20),
+            ListTile(
+              leading: const Icon(Icons.privacy_tip, color: Colors.blue),
+              title: const Text('Política de Privacidad'),
+              subtitle: const Text('Lee nuestra política completa'),
+              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const PrivacyPolicyPage(),
+                  ),
+                );
+              },
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.shield, color: Colors.blue),
+              title: const Text('Protección de Datos'),
+              subtitle: const Text('Aviso de privacidad LFPDPPP'),
+              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const DataProtectionPage(),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
     );
   }
 

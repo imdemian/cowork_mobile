@@ -3,6 +3,8 @@ import 'package:cowork_frontend/features/home/presentation/pages/search_page.dar
 import 'package:cowork_frontend/features/home/presentation/pages/favorites_page.dart';
 import 'package:cowork_frontend/features/auth/presentation/pages/profile_page.dart';
 import 'package:cowork_frontend/features/auth/presentation/pages/login_page.dart';
+import 'package:cowork_frontend/features/auth/presentation/pages/privacy_policy_page.dart';
+import 'package:cowork_frontend/features/auth/presentation/pages/data_protection_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -111,19 +113,6 @@ class HomeContent extends StatelessWidget {
           ],
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 0,
-        type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Inicio'),
-          BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Buscar'),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.bookmark),
-            label: 'Favoritos',
-          ),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Perfil'),
-        ],
-      ),
     );
   }
 
@@ -222,6 +211,35 @@ class HomeContent extends StatelessWidget {
               );
             },
           ),
+          const Divider(),
+          // NUEVAS OPCIONES DE PRIVACIDAD
+          ListTile(
+            leading: const Icon(Icons.privacy_tip),
+            title: const Text('Política de Privacidad'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const PrivacyPolicyPage(),
+                ),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.shield),
+            title: const Text('Protección de Datos'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const DataProtectionPage(),
+                ),
+              );
+            },
+          ),
+          const Divider(),
           ListTile(
             leading: const Icon(Icons.info_outline),
             title: const Text('Acerca de'),
