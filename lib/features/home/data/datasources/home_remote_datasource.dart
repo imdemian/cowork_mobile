@@ -1,4 +1,3 @@
-import 'package:dio/dio.dart';
 import 'package:cowork_frontend/core/network/dio_client.dart';
 import 'package:cowork_frontend/core/constants/api_endpoints.dart';
 import '../models/space_model.dart';
