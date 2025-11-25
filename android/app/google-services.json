@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "164991754779",
+    "project_id": "coworkbd-6e5de",
+    "storage_bucket": "coworkbd-6e5de.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:164991754779:android:b32133c9071ac241c34ebe",
+        "android_client_info": {
+          "package_name": "com.example.cowork_frontend"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "164991754779-p7qb5ju55ibet4p9ipm1an8d2l0824fm.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.cowork_frontend",
+            "certificate_hash": "81cc4fa145653e4fb4147c7e2510d12a290ecca3"
+          }
+        },
+        {
+          "client_id": "164991754779-tld56fe5p93fifned9v9kusbkkedudpi.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAxlLnsl0HAs9jX90QSvbrJ898FrHhPWzo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "164991754779-tld56fe5p93fifned9v9kusbkkedudpi.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "164991754779-jfqnq6egph37pgphhddtv8684qmj0t2r.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.coworkFrontend"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

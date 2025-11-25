@@ -1,258 +1,215 @@
+// lib/features/home/presentation/pages/favorites_page.dart
 import 'package:flutter/material.dart';
+import 'package:cowork_frontend/models/space_model.dart';
+import 'package:cowork_frontend/services/favorites_service.dart';
+import 'package:cowork_frontend/services/space_service.dart';
+import 'space_detail_page.dart';
 
-class FavoritesPage extends StatefulWidget {
+class FavoritesPage extends StatelessWidget {
   const FavoritesPage({super.key});
-
-  @override
-  State<FavoritesPage> createState() => _FavoritesPageState();
-}
-
-class _FavoritesPageState extends State<FavoritesPage> {
-  final List<Map<String, dynamic>> _favorites = [
-    {
-      'name': 'Oficina Premium Centro',
-      'location': 'Centro, Ciudad',
-      'price': 150.0,
-      'rating': 4.8,
-      'type': 'Oficina privada',
-    },
-    {
-      'name': 'Sala de Reunión Tech Hub',
-      'location': 'Zona Norte',
-      'price': 80.0,
-      'rating': 4.5,
-      'type': 'Sala de reunión',
-    },
-    {
-      'name': 'Escritorio Compartido CoSpace',
-      'location': 'Zona Sur',
-      'price': 50.0,
-      'rating': 4.6,
-      'type': 'Escritorio compartido',
-    },
-  ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Mis Favoritos'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.sort),
-            onPressed: () {
-              _showSortOptions();
-            },
-          ),
-        ],
+        centerTitle: true,
+        backgroundColor: Colors.indigo,
+        foregroundColor: Colors.white,
       ),
-      body: _favorites.isEmpty
-          ? _buildEmptyState()
-          : ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: _favorites.length,
-              itemBuilder: (context, index) {
-                return _buildFavoriteCard(_favorites[index], index);
-              },
-            ),
+      body: StreamBuilder<List<String>>(
+        stream: FavoritesService().getFavoriteSpaceIds(),
+        builder: (context, snapshot) {
+          // Cargando
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          final favoriteIds = snapshot.data ?? [];
+
+          // Sin favoritos
+          if (favoriteIds.isEmpty) {
+            return _buildEmptyState(context);
+          }
+
+          // Cargar los espacios reales desde Firestore
+          return FutureBuilder<List<SpaceModel>>(
+            future: SpaceService().getSpacesByIds(favoriteIds),
+            builder: (context, spaceSnapshot) {
+              if (spaceSnapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              final spaces = spaceSnapshot.data ?? [];
+
+              if (spaces.isEmpty) {
+                return _buildEmptyState(context);
+              }
+
+              return ListView.builder(
+                padding: const EdgeInsets.all(16),
+                itemCount: spaces.length,
+                itemBuilder: (context, index) {
+                  final space = spaces[index];
+                  return _buildFavoriteCard(context, space);
+                },
+              );
+            },
+          );
+        },
+      ),
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(BuildContext context) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.bookmark_border, size: 80, color: Colors.grey[400]),
-          const SizedBox(height: 16),
+          Icon(Icons.favorite_border, size: 100, color: Colors.grey[400]),
+          const SizedBox(height: 24),
           Text(
-            'No tienes favoritos aún',
+            'Aún no tienes favoritos',
             style: TextStyle(
-              fontSize: 20,
+              fontSize: 22,
               fontWeight: FontWeight.bold,
-              color: Colors.grey[600],
+              color: Colors.grey[700],
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           Text(
-            'Guarda espacios que te interesen',
-            style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+            'Toca el corazón en cualquier espacio para guardarlo aquí',
+            style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+            textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 32),
           ElevatedButton.icon(
-            onPressed: () {
-              Navigator.pop(context);
-            },
+            onPressed: () => Navigator.pop(context),
             icon: const Icon(Icons.search),
             label: const Text('Explorar espacios'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.indigo,
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildFavoriteCard(Map<String, dynamic> space, int index) {
+  Widget _buildFavoriteCard(BuildContext context, SpaceModel space) {
     return Card(
+      elevation: 6,
       margin: const EdgeInsets.only(bottom: 16),
-      elevation: 2,
-      child: Column(
-        children: [
-          ListTile(
-            contentPadding: const EdgeInsets.all(12),
-            leading: Container(
-              width: 70,
-              height: 70,
-              decoration: BoxDecoration(
-                color: Colors.blue[100],
-                borderRadius: BorderRadius.circular(8),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => SpaceDetailPage(space: space)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Imagen
+            ClipRRect(
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(16),
               ),
-              child: const Icon(Icons.business, size: 35, color: Colors.blue),
+              child: Image.network(
+                space.imageUrl.isNotEmpty
+                    ? space.imageUrl
+                    : 'https://via.placeholder.com/400',
+                height: 180,
+                width: double.infinity,
+                fit: BoxFit.cover,
+              ),
             ),
-            title: Text(
-              space['name'],
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-            ),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    const Icon(Icons.location_on, size: 14, color: Colors.grey),
-                    const SizedBox(width: 4),
-                    Text(space['location']),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    const Icon(Icons.category, size: 14, color: Colors.grey),
-                    const SizedBox(width: 4),
-                    Text(space['type']),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    const Icon(Icons.star, size: 16, color: Colors.amber),
-                    const SizedBox(width: 4),
-                    Text(
-                      '${space['rating']}',
-                      style: const TextStyle(fontWeight: FontWeight.bold),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    space.name,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
                     ),
-                    const SizedBox(width: 16),
-                    Text(
-                      '\$${space['price'].toStringAsFixed(2)}/hora',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.blue,
-                        fontSize: 16,
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.location_on,
+                        size: 16,
+                        color: Colors.grey[600],
                       ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            trailing: IconButton(
-              icon: const Icon(Icons.bookmark, color: Colors.red),
-              onPressed: () {
-                _removeFavorite(index);
-              },
-            ),
-          ),
-          const Divider(height: 1),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              TextButton.icon(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Viendo detalles de ${space['name']}'),
-                    ),
-                  );
-                },
-                icon: const Icon(Icons.info_outline),
-                label: const Text('Ver detalles'),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Centro Ciudad',
+                        style: TextStyle(color: Colors.grey[600]),
+                      ),
+                      const Spacer(),
+                      // Corazón para quitar
+                      StreamBuilder<bool>(
+                        stream: FavoritesService().isFavorite(space.id),
+                        builder: (context, snapshot) {
+                          final isFav = snapshot.data ?? false;
+                          return IconButton(
+                            icon: Icon(
+                              isFav ? Icons.favorite : Icons.favorite_border,
+                              color: isFav ? Colors.red : Colors.grey,
+                              size: 28,
+                            ),
+                            onPressed: () async {
+                              await FavoritesService().toggleFavorite(space.id);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    isFav
+                                        ? 'Eliminado de favoritos'
+                                        : 'Añadido a favoritos',
+                                  ),
+                                  duration: const Duration(seconds: 1),
+                                ),
+                              );
+                            },
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Text(
+                        '\$${space.pricePerHour.toStringAsFixed(2)}/hora',
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.green,
+                        ),
+                      ),
+                      const Spacer(),
+                      TextButton.icon(
+                        onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => SpaceDetailPage(space: space),
+                          ),
+                        ),
+                        icon: const Icon(Icons.remove_red_eye, size: 18),
+                        label: const Text('Ver detalles'),
+                      ),
+                    ],
+                  ),
+                ],
               ),
-              TextButton.icon(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Reservando ${space['name']}')),
-                  );
-                },
-                icon: const Icon(Icons.calendar_today),
-                label: const Text('Reservar'),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _removeFavorite(int index) {
-    final space = _favorites[index];
-    setState(() {
-      _favorites.removeAt(index);
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('${space['name']} eliminado de favoritos'),
-        action: SnackBarAction(
-          label: 'Deshacer',
-          onPressed: () {
-            setState(() {
-              _favorites.insert(index, space);
-            });
-          },
+            ),
+          ],
         ),
       ),
-    );
-  }
-
-  void _showSortOptions() {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.sort_by_alpha),
-                title: const Text('Ordenar por nombre'),
-                onTap: () {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Ordenando por nombre')),
-                  );
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.attach_money),
-                title: const Text('Ordenar por precio'),
-                onTap: () {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Ordenando por precio')),
-                  );
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.star),
-                title: const Text('Ordenar por valoración'),
-                onTap: () {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Ordenando por valoración')),
-                  );
-                },
-              ),
-            ],
-          ),
-        );
-      },
     );
   }
 }

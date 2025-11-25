@@ -1,121 +1,211 @@
+// lib/features/auth/presentation/pages/profile_page.dart
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cowork_frontend/features/auth/presentation/pages/privacy_policy_page.dart';
 import 'package:cowork_frontend/features/auth/presentation/pages/data_protection_page.dart';
+import 'package:cowork_frontend/services/google_sign_in_service.dart';
 
-class ProfilePage extends StatelessWidget {
+// ← NUEVAS PÁGINAS QUE VAMOS A USAR
+import 'package:cowork_frontend/features/home/presentation/pages/favorites_page.dart';
+import 'package:cowork_frontend/features/home/presentation/pages/my_reservations_page.dart'; // ← CREAREMOS ESTA
+
+class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
 
   @override
+  State<ProfilePage> createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends State<ProfilePage> {
+  User? _user;
+  int _favoriteCount = 0;
+  int _activeReservations = 0;
+  double _userRating = 0.0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    setState(() => _user = user);
+
+    // Cargar favoritos
+    final favSnapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('favorites')
+        .get();
+    _favoriteCount = favSnapshot.size;
+
+    // Cargar reservas activas (confirmadas y no expiradas)
+    final now = Timestamp.now();
+    final resSnapshot = await FirebaseFirestore.instance
+        .collection('reservations')
+        .where('userId', isEqualTo: user.uid)
+        .where('status', isEqualTo: 'confirmed')
+        .where('expiresAt', isGreaterThan: now)
+        .get();
+    _activeReservations = resSnapshot.size;
+
+    // Cargar rating del usuario (si existe)
+    final userDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .get();
+    _userRating = (userDoc.data()?['rating'] ?? 0.0).toDouble();
+
+    if (mounted) setState(() {});
+  }
+
+  @override
   Widget build(BuildContext context) {
+    if (_user == null) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    final displayName = _user!.displayName ?? 'Usuario';
+    final email = _user!.email ?? 'No disponible';
+    final photoURL = _user!.photoURL;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Mi Perfil'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Abriendo configuración')),
-              );
-            },
-          ),
-        ],
+        centerTitle: true,
+        backgroundColor: Colors.indigo,
+        foregroundColor: Colors.white,
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            // Header del perfil
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: Theme.of(context).primaryColor.withOpacity(0.1),
-              ),
-              child: Column(
-                children: [
-                  CircleAvatar(
-                    radius: 50,
-                    backgroundColor: Theme.of(context).primaryColor,
-                    child: const Icon(
-                      Icons.person,
-                      size: 50,
-                      color: Colors.white,
+      body: RefreshIndicator(
+        onRefresh: _loadUserData,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Column(
+            children: [
+              // Header del perfil
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Colors.indigo, Colors.indigo.shade700],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    CircleAvatar(
+                      radius: 60,
+                      backgroundImage: photoURL != null
+                          ? NetworkImage(photoURL)
+                          : null,
+                      backgroundColor: Colors.white,
+                      child: photoURL == null
+                          ? const Icon(
+                              Icons.person,
+                              size: 60,
+                              color: Colors.indigo,
+                            )
+                          : null,
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Usuario Demo',
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'usuario@cowork.com',
-                    style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Editando perfil')),
-                      );
-                    },
-                    icon: const Icon(Icons.edit),
-                    label: const Text('Editar Perfil'),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            // Estadísticas
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: _buildStatCard(
-                      '12',
-                      'Reservas',
-                      Icons.calendar_today,
+                    const SizedBox(height: 16),
+                    Text(
+                      displayName,
+                      style: const TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildStatCard('8', 'Favoritos', Icons.bookmark),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(child: _buildStatCard('4.8', 'Rating', Icons.star)),
-                ],
+                    const SizedBox(height: 4),
+                    Text(
+                      email,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        color: Colors.white70,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
 
-            const SizedBox(height: 24),
+              const SizedBox(height: 20),
 
-            // Opciones del menú
-            _buildMenuSection(context),
-          ],
+              // Estadísticas REALES
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: _buildStatCard(
+                        _activeReservations.toString(),
+                        'Reservas Activas',
+                        Icons.qr_code_2,
+                        Colors.green,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildStatCard(
+                        _favoriteCount.toString(),
+                        'Favoritos',
+                        Icons.favorite,
+                        Colors.red,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildStatCard(
+                        _userRating.toStringAsFixed(1),
+                        'Rating',
+                        Icons.star,
+                        Colors.amber,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 30),
+
+              // Menú de opciones
+              _buildMenuSection(context),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildStatCard(String value, String label, IconData icon) {
+  Widget _buildStatCard(
+    String value,
+    String label,
+    IconData icon,
+    Color color,
+  ) {
     return Card(
+      elevation: 8,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            Icon(icon, color: Colors.blue),
-            const SizedBox(height: 8),
+            Icon(icon, size: 40, color: color),
+            const SizedBox(height: 12),
             Text(
               value,
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 4),
             Text(
               label,
-              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+              textAlign: TextAlign.center,
             ),
           ],
         ),
@@ -126,93 +216,132 @@ class ProfilePage extends StatelessWidget {
   Widget _buildMenuSection(BuildContext context) {
     return Column(
       children: [
-        _buildMenuGroup('Mis Actividades', [
+        _buildMenuGroup('Mi Cuenta', [
+          _buildMenuItem(
+            context,
+            Icons.qr_code_scanner,
+            'Mis Reservas Activas',
+            'Ver códigos QR vigentes',
+            () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const MyReservationsPage()),
+            ),
+          ),
+          _buildMenuItem(
+            context,
+            Icons.favorite,
+            'Mis Favoritos',
+            '$_favoriteCount espacios guardados',
+            () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const FavoritesPage()),
+            ),
+          ),
           _buildMenuItem(
             context,
             Icons.history,
             'Historial de Reservas',
-            'Ver todas tus reservas',
-            null,
+            'Reservas pasadas y canceladas',
+            () => _showComingSoon('Historial de Reservas'),
           ),
+        ]),
+
+        const SizedBox(height: 16),
+
+        _buildMenuGroup('Pagos y Facturación', [
           _buildMenuItem(
             context,
             Icons.payment,
             'Métodos de Pago',
-            'Gestionar tus tarjetas',
-            null,
+            'Tarjetas guardadas',
+            () => _showComingSoon('Métodos de Pago'),
           ),
           _buildMenuItem(
             context,
             Icons.receipt_long,
             'Facturas',
-            'Descargar tus recibos',
-            null,
+            'Descargar recibos',
+            () => _showComingSoon('Facturas'),
           ),
         ]),
+
         const SizedBox(height: 16),
+
         _buildMenuGroup('Configuración', [
           _buildMenuItem(
             context,
-            Icons.notifications_outlined,
+            Icons.notifications,
             'Notificaciones',
-            'Gestionar alertas',
-            null,
-          ),
-          _buildMenuItem(context, Icons.language, 'Idioma', 'Español', null),
-          _buildMenuItem(
-            context,
-            Icons.dark_mode_outlined,
-            'Tema',
-            'Claro',
-            null,
+            'Alertas y recordatorios',
+            () => _showComingSoon('Notificaciones'),
           ),
           _buildMenuItem(
             context,
-            Icons.privacy_tip_outlined,
-            'Privacidad',
-            'Configuración de privacidad',
-            () => _showPrivacyOptions(context),
+            Icons.language,
+            'Idioma',
+            'Español',
+            () => _showComingSoon('Idioma'),
+          ),
+          _buildMenuItem(
+            context,
+            Icons.dark_mode,
+            'Tema Oscuro',
+            'Desactivado',
+            () => _showComingSoon('Tema'),
           ),
         ]),
+
         const SizedBox(height: 16),
-        _buildMenuGroup('Soporte', [
+
+        _buildMenuGroup('Legal', [
+          _buildMenuItem(
+            context,
+            Icons.privacy_tip,
+            'Privacidad y Datos',
+            'Políticas',
+            () => _showPrivacyOptions(context),
+          ),
           _buildMenuItem(
             context,
             Icons.help_outline,
             'Ayuda y Soporte',
             'Centro de ayuda',
-            null,
+            () => _showComingSoon('Ayuda'),
           ),
           _buildMenuItem(
             context,
-            Icons.info_outline,
+            Icons.info,
             'Acerca de',
-            'Versión 1.0.0',
-            null,
+            'Cowork Mobile v1.0.0',
+            () => _showAbout(),
           ),
         ]),
-        const SizedBox(height: 24),
+
+        const SizedBox(height: 30),
+
+        // Botón cerrar sesión
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: SizedBox(
             width: double.infinity,
             child: OutlinedButton.icon(
-              onPressed: () {
-                _showLogoutDialog(context);
-              },
+              onPressed: () => _showLogoutDialog(context),
               icon: const Icon(Icons.logout, color: Colors.red),
               label: const Text(
                 'Cerrar Sesión',
-                style: TextStyle(color: Colors.red),
+                style: TextStyle(color: Colors.red, fontSize: 16),
               ),
               style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: Colors.red),
-                padding: const EdgeInsets.all(16),
+                side: const BorderSide(color: Colors.red, width: 2),
+                padding: const EdgeInsets.all(18),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             ),
           ),
         ),
-        const SizedBox(height: 32),
+        const SizedBox(height: 40),
       ],
     );
   }
@@ -225,15 +354,19 @@ class ProfilePage extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Text(
             title,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: Colors.grey,
+              color: Colors.grey[700],
             ),
           ),
         ),
         Card(
           margin: const EdgeInsets.symmetric(horizontal: 16),
+          elevation: 4,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           child: Column(children: items),
         ),
       ],
@@ -245,21 +378,25 @@ class ProfilePage extends StatelessWidget {
     IconData icon,
     String title,
     String subtitle,
-    VoidCallback? customAction,
+    VoidCallback onTap,
   ) {
     return ListTile(
-      leading: Icon(icon),
-      title: Text(title),
-      subtitle: Text(subtitle, style: const TextStyle(fontSize: 12)),
-      trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-      onTap:
-          customAction ??
-          () {
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text('Abriendo $title')));
-          },
+      leading: Icon(icon, color: Colors.indigo),
+      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+      subtitle: Text(subtitle, style: const TextStyle(fontSize: 13)),
+      trailing: const Icon(
+        Icons.arrow_forward_ios,
+        size: 16,
+        color: Colors.grey,
+      ),
+      onTap: onTap,
     );
+  }
+
+  void _showComingSoon(String feature) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('$feature - Próximamente')));
   }
 
   void _showPrivacyOptions(BuildContext context) {
@@ -268,85 +405,79 @@ class ProfilePage extends StatelessWidget {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) => Padding(
-        padding: const EdgeInsets.all(16),
+      builder: (_) => Padding(
+        padding: const EdgeInsets.all(20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 40,
-              height: 4,
-              margin: const EdgeInsets.only(bottom: 20),
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
             const Text(
-              'Privacidad y Datos',
+              'Privacidad',
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 20),
             ListTile(
-              leading: const Icon(Icons.privacy_tip, color: Colors.blue),
+              leading: const Icon(Icons.privacy_tip),
               title: const Text('Política de Privacidad'),
-              subtitle: const Text('Lee nuestra política completa'),
-              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const PrivacyPolicyPage(),
-                  ),
-                );
-              },
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const PrivacyPolicyPage()),
+              ),
             ),
-            const Divider(),
             ListTile(
-              leading: const Icon(Icons.shield, color: Colors.blue),
+              leading: const Icon(Icons.shield),
               title: const Text('Protección de Datos'),
-              subtitle: const Text('Aviso de privacidad LFPDPPP'),
-              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const DataProtectionPage(),
-                  ),
-                );
-              },
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const DataProtectionPage()),
+              ),
             ),
-            const SizedBox(height: 20),
           ],
         ),
       ),
     );
   }
 
+  void _showAbout() {
+    showAboutDialog(
+      context: context,
+      applicationName: 'Cowork Mobile',
+      applicationVersion: '1.0.0',
+      applicationIcon: const Icon(
+        Icons.business_center,
+        size: 50,
+        color: Colors.indigo,
+      ),
+      children: const [
+        Text('La mejor app para reservar espacios de coworking'),
+        SizedBox(height: 10),
+        Text('© 2025 Cowork Mobile'),
+      ],
+    );
+  }
+
   void _showLogoutDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (_) => AlertDialog(
         title: const Text('Cerrar Sesión'),
-        content: const Text('¿Estás seguro que deseas cerrar sesión?'),
+        content: const Text('¿Estás seguro de que quieres salir?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Cancelar'),
           ),
           TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(const SnackBar(content: Text('Sesión cerrada')));
+            onPressed: () async {
+              await GoogleSignInService.signOut();
+              if (mounted) {
+                Navigator.pushNamedAndRemoveUntil(
+                  context,
+                  '/login',
+                  (route) => false,
+                );
+              }
             },
-            child: const Text(
-              'Cerrar Sesión',
-              style: TextStyle(color: Colors.red),
-            ),
+            child: const Text('Salir', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
